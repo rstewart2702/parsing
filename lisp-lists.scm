@@ -48,19 +48,18 @@
   
 ;; ====================================
 
+;; Recognizing something as belonging to a language
+;; is one thing.
+;;
+;; Parsing the language to produce a parse tree is
+;; something else.
+
 ;; An attempt at a "flat sums" kind of language/grammar:
 ;; FS ::= <A> | <SS>
 (define flat-sum-parse
   (lambda (s)
     (if (atom? s) (cons s '())
-        (let ((first (car s))
-              (remaining (if (null? (cdr s)) '() (cdr s))) )
-          (cond
-           ((atom? first) first)
-           ;; assumption:  it's a list-structure, otherwise:
-           (#t (simple-sum-parse s) )
-           )
-          )
+        (simple-sum-parse s)
         )
     )
   )
