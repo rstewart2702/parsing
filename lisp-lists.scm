@@ -108,11 +108,43 @@
 ;; <RL> ::=  '()
 ;;         | <SUMOP> . ( <A> . <RL> )
 
+;; SHOULDN'T THIS BE SIMPLIFIED FURTHER?
+;; THE FOREGOING HAS MANY REPEATED STRUCTURES,
+;; AND SIMPLIFYING IT WOULD SIMPLIFY THE PARSING
+;; PROCEDURES, WOULDN'T IT?
+
+;; <SS> ::=  <A> | <RS>
+;;
+;; <RS> ::=  <A> . ( <SUMOP> . <RL> )
+;;
+;; <RL> ::=  '()
+;;         | <A> . ( <SUMOP> . <RL> )
+
 (define simple-sum-parse
   (lambda (s)
-    (if (list? s)
-	(cond
-	 ((atom? (car s)) (cons (car s) (rest-of-sum-parse (cdr s))
+    (if (and (list? s) (atom? (car s)))
+	(rest-of-sum-parse (cdr s))
+	s)))
+
+(define rest-of-sum-parse
+  (lambda (s)
+    (let* ((rand (car s))
+	   (rator (cadr s))
+	   (rand2 (caddr s)))
+      (cons rator
+	    (cons rand
+		  (rest-of-sum-list-parse rand2)))) ) )
+
+(define rest-of-sum-list-parse
+  (lambda (s)
+    (if (null? s) s
+	(let* ((rand (car s))
+	       (rator (cadr s))
+	       (rand2 (caddr s)))
+	  (cons rator
+		(cons rand
+		      (rest-of-sum-list-parse rand2)))))))
+	 
 
 
 ;; FOR SOME REASON, THIS WON'T WORK?
