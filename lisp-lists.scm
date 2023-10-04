@@ -132,7 +132,7 @@
   (lambda (s)
     (let* ((rand (car s))
            (rator (cadr s))
-           (rand2 (caddr s)))
+           (rand2 (cddr s)))
       (cons rator
             (cons rand
                   (rest-of-sum-list-parse rand2)))) ) )
@@ -144,7 +144,7 @@
      ((null? (cdr s)) s)
      (#t (let* ((rand (car s))
                (rator (cadr s))
-               (rand2 (caddr s)))
+               (rand2 (cddr s)))
           (cons rator
                 (cons rand
                       (rest-of-sum-list-parse rand2)))) ) ) ) )
