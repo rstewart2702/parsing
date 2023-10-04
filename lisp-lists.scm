@@ -117,7 +117,7 @@
 ;;
 ;; <RS> ::=  <A> . ( <SUMOP> . <RL> )
 ;;
-;; <RL> ::=  '()
+;; <RL> ::=  <A> . '()
 ;;         | <A> . ( <SUMOP> . <RL> )
 
 (define simple-sum-parse
@@ -139,13 +139,15 @@
 
 (define rest-of-sum-list-parse
   (lambda (s)
-    (if (null? s) s
-        (let* ((rand (car s))
+    (cond
+     ((null? s) s)
+     ((null? (cdr s)) s)
+     (#t (let* ((rand (car s))
                (rator (cadr s))
                (rand2 (caddr s)))
           (cons rator
                 (cons rand
-                      (rest-of-sum-list-parse rand2)))))))
+                      (rest-of-sum-list-parse rand2)))) ) ) ) )
          
 
 
