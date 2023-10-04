@@ -56,6 +56,7 @@
 
 ;; An attempt at a "flat sums" kind of language/grammar:
 ;; FS ::= <A> | <SS>
+
 (define flat-sum-parse
   (lambda (s)
     (if (atom? s) (cons s '())
@@ -83,3 +84,42 @@
            second
            (cons fr ptail))) ) ) )
       
+;; Rethinking the grammar, starting with a "simple-sum."
+;; Herein, the notion is that we're using Lisp lists,
+;; and so the idea is that a Lisp list is a cons cell,
+;; and therefore 
+
+;; I *think* this might work properly:
+;; The idea is that a sum is either <A> or <A> followed by <RS>.
+;; <RS> is a plus-or-minus, followed by a list, i.e.,
+;;   <A> . <RL> 
+;; Then, the <RL> is either empty-list, so that it's possible for
+;;   <A> . <RL> == (<A>)
+;; or else <RL> is a list with plus-or-minus as head, 
+;; and tail made up of:
+;;   <A> . <RL>
+;; which allows recursion to continue.
+
+;; <SS> ::=  <A>
+;;         | <A> . <RS> 
+
+;; <RS> ::= <SUMOP> . ( <A> . <RL> )
+
+;; <RL> ::=  '()
+;;         | <SUMOP> . ( <A> . <RL> )
+
+(define simple-sum-parse
+  (lambda (s)
+    (if (list? s)
+	(cond
+	 ((atom? (car s)) (cons (car s) (rest-of-sum-parse (cdr s))
+
+
+;; FOR SOME REASON, THIS WON'T WORK?
+;; <SS> ::=  '()
+;;         | <A> . <RS>
+;;
+;; <RS> ::=  <SUMOP> . <SS>
+;;         | '()
+
+
