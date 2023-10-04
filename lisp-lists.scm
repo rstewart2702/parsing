@@ -132,22 +132,30 @@
   (lambda (s)
     (let* ((rand (car s))
            (rator (cadr s))
-           (rand2 (cddr s)))
+           (rand2 (cddr s))
+           (rs-parse (rest-of-sum-list-parse rand2) ) )
       (cons rator
             (cons rand
-                  (rest-of-sum-list-parse rand2)))) ) )
+                  (if (atom? rs-parse)
+                      (list parsed-rest)
+                      rs-parse) ) ) ) ) )
+;;                  (rest-of-sum-list-parse rand2)))) ) )
 
 (define rest-of-sum-list-parse
   (lambda (s)
     (cond
-     ((null? s) s)
-     ((null? (cdr s)) s)
+     ;; ((null? s) s)
+     ((null? (cdr s)) (car s))
      (#t (let* ((rand (car s))
-               (rator (cadr s))
-               (rand2 (cddr s)))
+                (rator (cadr s))
+                (rand2 (cddr s))
+                (parsed-rest (rest-of-sum-list-parse rand2)) )
           (cons rator
                 (cons rand
-                      (rest-of-sum-list-parse rand2)))) ) ) ) )
+                      (if (atom? parsed-rest)
+                          (list parsed-rest)
+                          parsed-rest) ) ) ) ) ) ) )
+;;                      (rest-of-sum-list-parse rand2)))) ) ) ) )
          
 
 
