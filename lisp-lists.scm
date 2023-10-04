@@ -122,29 +122,31 @@
 
 (define simple-sum-parse
   (lambda (s)
-    (if (and (list? s) (atom? (car s)))
-	(rest-of-sum-parse (cdr s))
-	s)))
+    (if (atom? s) s
+        (rest-of-sum-parse s) ;; assumption is that it is a list.
+        ) ) )
 
+;; This seems to get us part of the way there,
+;; but it does not check (sumop? rator)
 (define rest-of-sum-parse
   (lambda (s)
     (let* ((rand (car s))
-	   (rator (cadr s))
-	   (rand2 (caddr s)))
+           (rator (cadr s))
+           (rand2 (caddr s)))
       (cons rator
-	    (cons rand
-		  (rest-of-sum-list-parse rand2)))) ) )
+            (cons rand
+                  (rest-of-sum-list-parse rand2)))) ) )
 
 (define rest-of-sum-list-parse
   (lambda (s)
     (if (null? s) s
-	(let* ((rand (car s))
-	       (rator (cadr s))
-	       (rand2 (caddr s)))
-	  (cons rator
-		(cons rand
-		      (rest-of-sum-list-parse rand2)))))))
-	 
+        (let* ((rand (car s))
+               (rator (cadr s))
+               (rand2 (caddr s)))
+          (cons rator
+                (cons rand
+                      (rest-of-sum-list-parse rand2)))))))
+         
 
 
 ;; FOR SOME REASON, THIS WON'T WORK?
