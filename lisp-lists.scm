@@ -139,25 +139,20 @@
            (rand2 (cddr s))
            (rs-parse (rest-of-sum-list-parse rand2) ) )
       (cons rator
-            (cons rand
-                  (if (atom? rs-parse)
-                      (list rs-parse)
-                      rs-parse) ) ) ) ) )
+            (cons rand rs-parse) ) ) ) )
+
 
 (define rest-of-sum-list-parse
   (lambda (s)
     (cond
-     ((null? (cdr s)) (car s))
+     ((null? (cdr s)) s)
      (#t (let* ((rand (car s))
                 (rator (cadr s))
                 (rand2 (cddr s))
                 (parsed-rest (rest-of-sum-list-parse rand2)) )
            (list
             (cons rator
-                  (cons rand
-                        (if (atom? parsed-rest)
-                            (list parsed-rest)
-                            parsed-rest) ) ) ) ) ) ) ) )
+                  (cons rand parsed-rest) ) ) ) ) ) ) )
          
 
 
