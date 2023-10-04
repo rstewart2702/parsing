@@ -104,9 +104,16 @@
 ;;         | <A> . <RS> 
 
 ;; <RS> ::= <SUMOP> . ( <A> . <RL> )
+;; OR, taking tips from the Slonneger text, but results in the third
+;;     <RL> production which follows:
+;; <RS> ::=  '()
+;;         | <SUMOP> . ( <A> . <RS> )
 
 ;; <RL> ::=  '()
 ;;         | <SUMOP> . ( <A> . <RL> )
+;;
+;; (But again, the above seemed rather complicated, and I tried to
+;; simplify it further, below.)
 
 ;; SHOULDN'T THIS BE SIMPLIFIED FURTHER?
 ;; THE FOREGOING HAS MANY REPEATED STRUCTURES,
@@ -154,7 +161,14 @@
             (cons rator
                   (cons rand parsed-rest) ) ) ) ) ) ) )
          
-
+;; Now, the above three parsing procedures make a very simple little parse
+;; for addition-and-subtraction expressions, which derives a "parse tree"
+;; which can be used to derive Forth expressions via a postorder traversal.
+;;
+;; The next tricky bit will be to try and work division and multiplication
+;; into it, giving precedence to division and multiplication, and allow
+;; precedence to be overridden with the use of enclosing parentheses around
+;; "addition expressions."
 
 ;; FOR SOME REASON, THIS WON'T WORK?
 ;; <SS> ::=  '()
