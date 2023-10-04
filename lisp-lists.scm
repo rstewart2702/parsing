@@ -119,6 +119,10 @@
 ;;
 ;; <RL> ::=  <A> . '()
 ;;         | <A> . ( <SUMOP> . <RL> )
+;;   parse-tree should be:
+;;           <A>   "bare atom"?
+;;         | <SUMOP> . ( <A> . ( <A> . '() ) )       == (<SUMOP> <A> <A>)
+;;         | <SUMOP> . ( <A> . ( <SUMOP> . (...) ) ) == (<SUMOP> <A> (<SUMOP> <A> (...)) )
 
 (define simple-sum-parse
   (lambda (s)
@@ -134,11 +138,12 @@
            (rator (cadr s))
            (rand2 (cddr s))
            (rs-parse (rest-of-sum-list-parse rand2) ) )
-      (cons rator
-            (cons rand
-                  (if (atom? rs-parse)
-                      (list parsed-rest)
-                      rs-parse) ) ) ) ) )
+      ;; (list
+       (cons rator
+             (cons rand
+                   (if (atom? rs-parse)
+                       (list rs-parse)
+                       rs-parse) ) ) ) ) ) ;; )
 ;;                  (rest-of-sum-list-parse rand2)))) ) )
 
 (define rest-of-sum-list-parse
@@ -150,11 +155,12 @@
                 (rator (cadr s))
                 (rand2 (cddr s))
                 (parsed-rest (rest-of-sum-list-parse rand2)) )
-          (cons rator
-                (cons rand
-                      (if (atom? parsed-rest)
-                          (list parsed-rest)
-                          parsed-rest) ) ) ) ) ) ) )
+           (list
+            (cons rator
+                  (cons rand
+                        (if (atom? parsed-rest)
+                            (list parsed-rest)
+                            parsed-rest) ) ) ) ) ) ) ) )
 ;;                      (rest-of-sum-list-parse rand2)))) ) ) ) )
          
 
