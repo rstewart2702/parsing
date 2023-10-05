@@ -170,6 +170,44 @@
 ;; precedence to be overridden with the use of enclosing parentheses around
 ;; "addition expressions."
 
+;; Considering multiplication now:
+;;
+;; a + b * c == a + (b*c) , i.e., multiplication takes higher precedence.
+;; (+ a (* b c)) should be the parse tree.
+;;
+;; a * b + c should yield (+ (* a b) c)
+;;
+;; a * (b + c) should yield (* a (+ b c))
+;;
+;; (b + c) * a should yield (* (+ b c) a)
+;;
+;; So it would seem that "bracketing" should cause recursive parsing
+;; of <SS>.  But how do the two interact?  For a sum can have products
+;; as its terms, and a product can have sums as its factors.
+;; In the following, I've mimiced in product what was done in sums,
+;; with the addition of <T> for "terms in a sum" and
+;; <F> for "factors in a product."
+;;
+;; <SS> ::=  <T>
+;;         | <RS>
+;; <T>  ::=  <F>
+;;         | <A>
+;; <RS> ::=  <T>
+;;         | ( <SUMOP> . <RL> )
+;; <RL> ::=  <T> . '()
+;;         | <T> . ( <SUMOP> . <RL> )
+;;
+;; <F>  ::=  <LB> <SS> <RB>
+;;         | <A>
+;;
+;; <P>  ::=  <F>
+;;         | <RP>
+;; <RP> ::=  <F>
+;;         | ( <MULOP> . <RPL> )
+;; <RPL>::=  <F> . '()
+;;         | <F> . ( <MULOP> . <RPL> )
+
+
 ;; FOR SOME REASON, THIS WON'T WORK?
 ;; <SS> ::=  '()
 ;;         | <A> . <RS>
