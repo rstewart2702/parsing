@@ -207,12 +207,110 @@
 ;; <RPL>::=  <F> . '()
 ;;         | <F> . ( <MULOP> . <RPL> )
 
-
-;; FOR SOME REASON, THIS WON'T WORK?
-;; <SS> ::=  '()
-;;         | <A> . <RS>
+;; I endeavored to rewrite the above, since
+;; some of the production rules seemed to be redundant
+;; and possibly define a language different from the
+;; language I wish to recognize.
 ;;
-;; <RS> ::=  <SUMOP> . <SS>
-;;         | '()
+;; Also, in the interests of simplicity-for-study,
+;; the following likely only permits sums which are
+;; ALWAYS bracketed (in parentheses, by default, eh?)
+;; Therefore, the starting production/state will
+;; be to try and recognize/parse a <P>, a "product,"
+;; first, and then allow solitary sums that are
+;; start out bracketed in parentheses.
+
+;; <P>  ::=   <F>
+;;          | <RP>
+;; <RP> ::=   <F> . ( <MULOP> . <RPL> )
+;; <RPL> ::=   <F> . '()
+;;           | <F> . ( <MULOP> . <RPL> )
+;;
+;; <F> ::=  <A>
+;;        | <LB> <SS> <RB>
+;;
+;; <SS> ::=  <T>
+;;         | <RS>
+;; <T>  ::=  <P>
+;;         | <A>
+;; <RS> ::=  <T> . ( <SUMOP> . <RL> )
+;; <RL> ::=  <T> . '()
+;;         | <T> . ( <SUMOP> . <RL> )
+
+;; Now, how on earth are products to be given
+;; higher precedence when there are not
+;; parentheses?
+
+;; E.g., how would the above parse/recognize
+;; something like
+;;   b * a + c
+;; For this, we would like a parse tree like:
+;;   (+ (* b a) c)
+;;
+;; And then, how would the above parse/recognize
+;; something like
+;;   (b + a * c)
+;;      notice:  the outermost expr must be
+;;               ()-bracketed, correct?
+;; because we would like to see a parse tree like:
+;;   (+ b (* a c) )
+;; I suppose...
+
+;; When parsing (b + a * c):
+;; (b   +         a    *     c)
+;; ^^   ^         ^
+;; ||   |         |
+;; \<A> \         |
+;;  \    \        
+;;   <LB> <SUMOP>
 
 
+;;============================================
+;; So, here's a third revision to the language:
+;;
+;; BUT: TURNS OUT THIS *FAILS* TO SPECIFY THE LANGUAGE
+;;      WE WANTED!
+;; <SS> IS THE START SYMBOL.
+;; <SS> ::=  <P> | (<P> . <RSL>)
+;; <RSL> ::= ( <SUMOP> . <RSL1> )
+;; <RSL1> ::= <P> | ( <SUMOP> . <RSL1> )
+;;
+;; <P> ::=  <F> | ( <F> . <RPL> )
+;; <RPL> ::= ( <MULOP> . <RPL1> )
+;; <RPL1> ::= <F> | ( <F> . ( <MULOP> . <RPL1> ) )
+;;
+;; <F> ::=  <A> | <LB> <SS> <RB>
+
+(define ss-sum
+  (lambda (s)
+    (cond ((null? s) '())
+          ((null? (cdr s)) (product (car s)) )
+          (#t (let* ((rand (product (car s)))
+                     (rsl-parse (rsl (cdr s)))
+                     (rator (car rsl-parse))
+                     (rand2 (cdr rsl-parse)) )
+                (display "rsl-parse: ")(display rsl-parse)(display "\n")
+                (display "rand2: ")(display rand2)(display "\n")
+                (cons rator
+                      (cons rand rand2)) ) ) ) ) )
+
+(define rsl
+  (lambda (s)
+    (let* ((rator (if (sumop? (car s)) (car s) '()))
+           (rand  (rsl1 (cdr s))) )
+      (cons rator rand) ) ) )
+
+(define rsl1
+  (lambda (s)
+    (cond ((null? (cdr s)) (product (car s)))
+          (#t (let* ((rator (if (sumop? (car s)) (car s) '()))
+                     (rand (rsl1 (cdr s))) )
+                (cons rator
+                      rand) ) ) ) ) )
+
+;; for now, this is all parsing a product will do:
+(define product
+  (lambda (s)
+    (display "product \n") (display s) (display "\n")
+    (cons s '())))
+                     
