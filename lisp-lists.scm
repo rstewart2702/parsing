@@ -309,20 +309,23 @@
   (lambda (s)
     (let* ((rator (if (sumop? (car s)) (car s) '()))
            (rand  (rsl1 (cdr s))) )
-      (cons rator rand) ) ) )
+      (cons rator rand)) ) )
 
 (define rsl1
   (lambda (s)
-    (cond ((null? (cdr s)) (product (car s)))
+    (cond ((null? (cdr s)) (cons (product (car s)) '()) )
           (#t (let* ((rator (if (sumop? (cadr s)) (cadr s) '()))
                      (rand  (product (car s)))
                      (rand2 (rsl1 (cddr s))  ) )
-                (cons rator
-                      (cons rand rand2) ) ) ) ) ) )
+                (list
+                 (cons rator
+                       (cons rand rand2) ) ) ) ) ) ) )
 
 ;; for now, this is all parsing a product will do:
 (define product
   (lambda (s)
     (display "product \n") (display s) (display "\n")
-    (cons s '())))
+    ;; (cons s '())
+    s
+    ) )
                      
