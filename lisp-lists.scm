@@ -281,6 +281,17 @@
 ;;
 ;; <F> ::=  <A> | <LB> <SS> <RB>
 
+;; <SS> IS THE START SYMBOL.
+;; <SS> ::=  <P> | (<P> . <RSL>)
+;;   
+;; <RSL> ::= ( <SUMOP> . <RSL1> )
+;;
+;; There was problem with this:
+;;   <RSL1> ::= <P> | ( <SUMOP> . <RSL1> )
+;; It ought to be:
+;; <RSL1> ::=  ( <P> ) | ( <P> . ( <SUMOP> . <RSL1> ) ) ???
+;; 
+
 (define ss-sum
   (lambda (s)
     (cond ((null? s) '())
@@ -303,10 +314,11 @@
 (define rsl1
   (lambda (s)
     (cond ((null? (cdr s)) (product (car s)))
-          (#t (let* ((rator (if (sumop? (car s)) (car s) '()))
-                     (rand (rsl1 (cdr s))) )
+          (#t (let* ((rator (if (sumop? (cadr s)) (cadr s) '()))
+                     (rand  (product (car s)))
+                     (rand2 (rsl1 (cddr s))  ) )
                 (cons rator
-                      rand) ) ) ) ) )
+                      (cons rand rand2) ) ) ) ) ) )
 
 ;; for now, this is all parsing a product will do:
 (define product
