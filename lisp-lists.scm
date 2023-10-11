@@ -6,6 +6,16 @@
   (lambda (x)
     (and (symbol? x) (or (eq? x '+) (eq? x '-)))))
 
+(define mulop?
+  (lambda (x)
+    (and (symbol? x) (or (eq? x '*) (eq? x '/))) ) )
+
+(define lbrack?
+  (lambda (x)
+    (and (char? x) (eq? x '#\( )) ) )
+(define rbrack?
+  (lambda (x)
+    (and (char? x) (eq? x '#\) )) ) )
 ;; ====================================
 
 ;; "general lisp lists"
@@ -268,29 +278,11 @@
 ;;============================================
 ;; So, here's a third revision to the language:
 ;;
-;; BUT: TURNS OUT THIS *FAILS* TO SPECIFY THE LANGUAGE
-;;      WE WANTED!
 ;; <SS> IS THE START SYMBOL.
 ;; <SS> ::=  <P> | (<P> . <RSL>)
 ;; <RSL> ::= ( <SUMOP> . <RSL1> )
-;; <RSL1> ::= <P> | ( <SUMOP> . <RSL1> )
+;; <RSL1> ::=  ( <P> ) | ( <P> . ( <SUMOP> . <RSL1> ) )
 ;;
-;; <P> ::=  <F> | ( <F> . <RPL> )
-;; <RPL> ::= ( <MULOP> . <RPL1> )
-;; <RPL1> ::= <F> | ( <F> . ( <MULOP> . <RPL1> ) )
-;;
-;; <F> ::=  <A> | <LB> <SS> <RB>
-
-;; <SS> IS THE START SYMBOL.
-;; <SS> ::=  <P> | (<P> . <RSL>)
-;;   
-;; <RSL> ::= ( <SUMOP> . <RSL1> )
-;;
-;; There was problem with this:
-;;   <RSL1> ::= <P> | ( <SUMOP> . <RSL1> )
-;; It ought to be:
-;; <RSL1> ::=  ( <P> ) | ( <P> . ( <SUMOP> . <RSL1> ) ) ???
-;; 
 
 (define ss-sum
   (lambda (s)
@@ -321,11 +313,71 @@
                  (cons rator
                        (cons rand rand2) ) ) ) ) ) ) )
 
+;; <P> ::=  <F> | ( <F> . <RPL> )
+;; <RPL> ::= ( <MULOP> . <RPL1> )
+;; <RPL1> ::= ( <F> ) | ( <F> . ( <MULOP> . <RPL1> ) )
+;;
+;; <F> ::=  <A> | <LB> <SS> <RB>
+
 ;; for now, this is all parsing a product will do:
 (define product
   (lambda (s)
     (display "product \n") (display s) (display "\n")
-    ;; (cons s '())
-    s
+    (cond ((null? s) '())
+          ((null? (cdr s)) (cons (factor (car s)) '()))
+          (#t (let* ((fctr (factor (car s)))
+                     (rpl-parse (rpl (cdr s)))
+                     (rator (car rpl-parse))
+                     (fctr2 (cdr rpl-parse)) )
+                (cons rator
+                      (cons fctr fctr2)) ) ) ) ) )
+
+(define rpl
+  (lambda (s)
+    (let* ((rator (if (mulop? (car s)) (car s) '()))
+           (fctr (rpl1 (cdr s))) )
+      (cons rator fctr) )
     ) )
+
+(define rpl1
+  (lambda (s)
+    (cond ((null? (cdr s)) (cons (factor (car s)) '()) )
+          (#t (let* ((rator (if (mulop? (cadr s)) (cadr s) '()))
+                     (fctr  (factor (car s) ))
+                     (fctr2 (rpl1   (cddr s))) )
+                (list
+                 (cons rator
+                       (cons fctr fctr2) ) ) ) ) )
+    ) )
+
+;; ATTENTION:
+;; One thing we seem to have forgotten is that the
+;; left- and right-bracket delimiters (parentheses in "ordinary notation")
+;; need to be consumed, right?  They'll need to be used up before
+;; returning the result to the enclosing or calling parsing function.
+;; This means that the grammar needs to be revised.
+;;
+;; That is, the rule:
+;;   <F> ::= <A> | <LB> <SS> <RB>
+;; needs to be broken into at least two separate rules?
+;;
+;;   <F> ::= <A> | <LB> <FR>
+;;   <FR> ::= <SS> <RB> 
+;;
+;; It's almost as if we must scan ahead to the enclosing <RB>
+;; and pass everything in between <LB> and <RB> into a
+;; "separate invocation of the parser," and return that result.
+;; So, this seems to imply a "plucking out" of all that's
+;; delimited between <LB> and <RB> into a separate list-of-tokens,
+;; parsing it "separately," and then returning that result
+;; to the "enclosing caller" so that the "main parsing" may
+;; continue.  We're invoking a sub-parser with the results of
+;; what's been consumed from between <LB> and <RB>.
+
+
+(define factor
+  (lambda (f)
+    (cond ((null? (cdr f)) (car f))
+          ((lbrack? (car f)) (list (ss-sum (cadr f)) ) ) ) ) )
+
                      
