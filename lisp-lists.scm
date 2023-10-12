@@ -302,20 +302,19 @@
 (define ss-sum-r
   (lambda (s)
     (cond ((null? s) '())
-          ((null? (cdr s))
-           (product (car s))  ;; but this is TOO SIMPLE, there's more to dealing with result of
-                              ;; parsing a <P> (This probably needs to be another "let*" expression that
-                              ;; derives the parse-result and the rest-of-tokens-list to return to caller...)
+          ((and (list? s) (null? (cadr s)) ) ;; i.e., if the list-of-remaining tokens is empty
+           (product (car s))  ;; this should yield ( <P> <TOKENS> )
            )
           )
           (#t
-           (let* ((prod-parse (product (car s)))  ;; prod-parse is "result-of-parsing-first-product, rest-of-tokens" pairing, eh?
+           (let* ((prod-parse (prdct   (car s)))  ;; prod-parse is "result-of-parsing-first-product, rest-of-tokens" pairing, eh?
                                                   ;; prod-parse is bound to ( <P> <TOKENS> ) list?
-                  (rand       (car prod-parse)      )   ;;
-                  (rsl-parse  (rsl (cdr prod-parse)))   ;; and so (cdr prod-parse) is the list-of-remaining-tokens?
-                                                        ;; rsl-parse is bound to ( <RSL> <TOKENS> )
-                  (rator      (caar rsl-parse)      )   ;; and so (caar rsl-parse) is the operator retrieved from rsl-parse result
-                  (rand2      (cadr rsl-parse)      ) ) ;; and so (cadr rsl-parse) is second operand retrieved from rsl-parse result
+                  (rand       (car prod-parse)       )   ;;
+                  (rsl-parse  (rsl (cadr prod-parse)))   ;; and so (cdr prod-parse) is the list-of-remaining-tokens?
+                                                         ;; rsl-parse is bound to ( <RSL> <TOKENS> ), and (<RSL> <TOKENS>) is not a parse-tree; 
+                                                         ;;    the <RSL>, (car prod-parse) is a (<SUMOP> . <RSL1>) pairing in a cons cell...
+                  (rator      (caar rsl-parse)       )   ;; and so (caar rsl-parse) is the operator retrieved from rsl-parse result
+                  (rand2      (cadr rsl-parse)       ) ) ;; and so (cadr rsl-parse) is second operand retrieved from rsl-parse result
              (cons
               (cons rator
                     (cons rand rand2) )
@@ -324,6 +323,16 @@
            )
           ) ) )
 
+
+(define rsl
+  (lambda (s)
+    (let* ((rator (if (sumop? (car s)) (car s) '()))
+           (rand  (rsl1 (cdr s)) ) )
+      (list
+       (cons rator rand)
+       (caar s)  ;; we wish for this to be an "independent list"
+       )
+      ) ) )
 
 (define rsl
   (lambda (s)
