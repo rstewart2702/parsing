@@ -297,6 +297,34 @@
                 (cons rator
                       (cons rand rand2)) ) ) ) ) )
 
+;; Starting on a revision to the ss-sum in which the result is a
+;; parsed item, and the resulting sub-parse-tree?
+(define ss-sum-r
+  (lambda (s)
+    (cond ((null? s) '())
+          ((null? (cdr s))
+           (product (car s))  ;; but this is TOO SIMPLE, there's more to dealing with result of
+                              ;; parsing a <P> (This probably needs to be another "let*" expression that
+                              ;; derives the parse-result and the rest-of-tokens-list to return to caller...)
+           )
+          )
+          (#t
+           (let* ((prod-parse (product (car s)))  ;; prod-parse is "result-of-parsing-first-product, rest-of-tokens" pairing, eh?
+                                                  ;; prod-parse is bound to ( <P> <TOKENS> ) list?
+                  (rand       (car prod-parse)      )   ;;
+                  (rsl-parse  (rsl (cdr prod-parse)))   ;; and so (cdr prod-parse) is the list-of-remaining-tokens?
+                                                        ;; rsl-parse is bound to ( <RSL> <TOKENS> )
+                  (rator      (caar rsl-parse)      )   ;; and so (caar rsl-parse) is the operator retrieved from rsl-parse result
+                  (rand2      (cadr rsl-parse)      ) ) ;; and so (cadr rsl-parse) is second operand retrieved from rsl-parse result
+             (cons
+              (cons rator
+                    (cons rand rand2) )
+              (cdr prod-parse) ;; bring in the rest-of-tokens, eh?
+              )
+           )
+          ) ) )
+
+
 (define rsl
   (lambda (s)
     (let* ((rator (if (sumop? (car s)) (car s) '()))
@@ -380,4 +408,25 @@
     (cond ((null? (cdr f)) (car f))
           ((lbrack? (car f)) (list (ss-sum (cadr f)) ) ) ) ) )
 
-                     
+;; Need a mechanism to recursively parse the <SS> element,
+;; then return "the rest of the tokens list" to the caller
+;; after the recursive work is concluded...
+;;
+;; Another rule-and-parsing-procedure seems to be called for.
+;; The parsing procedure will recursively invoke ss-sum, 
+;; and return the result of ss-sum, AND the rest-of-the-tokens-list.
+;; The new parsing procedure provides a "stacked context" in which
+;; this can be "captured," and then it can "tail-recursively" continue
+;; with the parsing.  That is to say, this "handler of the bracketed <SS>"
+;; should try to parse the <SS> and also return to its caller
+;; the rest of the tokens-to-be-parsed, which ought to start with
+;; the <RB>, that "right-hand bracket" which delimited the <SS>-that-was-parsed-out...
+
+(define b-factor-finish
+  (lambda (s)
+    ) )
+    
+
+;; I"m afraid that I must thread through all of the parsing-procedures
+;; the list-of-tokens, and return a list-of-remaining-tokens
+;; from each parsing procedure call?
