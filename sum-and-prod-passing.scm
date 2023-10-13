@@ -55,13 +55,46 @@
     )
   )
 
-;; For now, this is a stand-in version of product:
-(define product
-  (lambda (s)
-    (list (car s) (cdr s))) )
-
+;; I shall try to re-work the grammar for <P> in a similar
+;; fashion to what was done in the grammer for <SS> :
 ;; <P> ::=  <F> | ( <F> . <RPL> )
 ;; <RPL> ::= ( <MULOP> . <RPL1> )
 ;; <RPL1> ::= ( <F> ) | ( <F> . ( <MULOP> . <RPL1> ) )
+
+;; Revised grammar production for products, for <P>'s :
+;; <P> ::=  <F> | ( <F> . ( <MULOP> . <P> ) )
+;; <F> ::=  <A> | <LB> <SS> <RB>
+
+(define product
+  (lambda (s)
+    (cond ((and (null? (cdr s))
+		(not (aop? (car s))) ) (factor s))
+	  ( #t (let* ((f-parse (factor s))
+		      (tkns    (cadr f-parse))
+		      (rator   (car tkns))
+		      (rand    (car f-parse))
+		      (prd-parse (product (cdr tkns))) ;; recursively parses a <P>, a product
+		      (p-tkns  (cadr prd-parse))
+		      (rand2   (car prd-parse)) )
+		 (list (list rator rand rand2) p-tkns) ) )
+	  )
+    )
+  )
+
 ;;
 ;; <F> ::=  <A> | <LB> <SS> <RB>
+(define factor
+  (lambda (s)
+    (cond ((and (atom? (car s))
+		(null? (cdr s))) (list s (cdr s)))
+	  ( #t (let* ((lb? (lbrack? (car s)))
+		      (sub-parse (simple-sum-parse (cdr s)))
+		      (sub-sum (car sub-parse))
+		      (tkns (cadr sub-parse))
+		      (rb? (rbrack? (car tkns))) )
+		 (if (and lb? rb?)
+		     (list sub-sum (cdr tkns))
+		     'error) ) )
+	  )
+    )
+  )
