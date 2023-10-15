@@ -85,8 +85,7 @@
 ;; <F> ::=  <A> | <LB> <SS> <RB>
 (define factor
   (lambda (s)
-    (cond ((and (atom? (car s))
-		(null? (cdr s))) (list s (cdr s)))
+    (cond ((atom? (car s)) (list s (cdr s)))
 	  ( #t (let* ((lb? (lbrack? (car s)))
 		      (sub-parse (simple-sum-parse (cdr s)))
 		      (sub-sum (car sub-parse))
