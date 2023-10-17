@@ -51,7 +51,7 @@
                       (rand2   (car rsl-parse))    ;; second operand, from the parsing
                       (f-tkns  (cadr rsl-parse)) )     ;; remaining tokens to send back to caller
                  (list (list rator rand rand2) f-tkns) ) )
-	  )
+          )
     )
   )
 
@@ -68,34 +68,45 @@
 (define product
   (lambda (s)
     (cond ((and (null? (cdr s))
-		(not (aop? (car s))) ) (factor s))
-	  ( #t (let* ((f-parse (factor s))
-		      (tkns    (cadr f-parse))
-		      (rator   (car tkns))
-		      (rand    (car f-parse))
-		      (prd-parse (product (cdr tkns))) ;; recursively parses a <P>, a product
-		      (p-tkns  (cadr prd-parse))
-		      (rand2   (car prd-parse)) )
-		 (list (list rator rand rand2) p-tkns) ) )
-	  )
+                (not (aop? (car s))) ) (factor s))
+          ( #t (let* ((f-parse (factor s))
+                      (tkns    (cadr f-parse))
+                      (rator   (car tkns)))
+                 (if (mulop? rator)
+                     (let* ((rand    (car f-parse))
+                            (prd-parse (product (cdr tkns))) ;; recursively parses a <P>, a product
+                            (p-tkns  (cadr prd-parse))
+                            (rand2   (car prd-parse)) )
+                       (list (list rator rand rand2) p-tkns) )
+                     ;; this is what the rest of parsing means
+                     ;; if the operator is NOT for multiplication:
+                     (list (car f-parse) (cadr f-parse))
+                     )
+                 )
+            )
+          )
     )
   )
+  
 
 ;;
 ;; <F> ::=  <A> | <LB> <SS> <RB>
 (define factor
   (lambda (s)
     (cond ((and (atom? (car s))
-		(not (lbrack? (car s)))
-		(not (rbrack? (car s)))) (list (car s) (cdr s)))
-	  ( #t (let* ((lb? (lbrack? (car s)))
-		      (sub-parse (simple-sum-parse (cdr s)))
-		      (sub-sum (car sub-parse))
-		      (tkns (cadr sub-parse))
-		      (rb? (rbrack? (car tkns))) )
-		 (if (and lb? rb?)
-		     (list sub-sum (cdr tkns))
-		     'error) ) )
-	  )
+                (not (lbrack? (car s)))
+                (not (rbrack? (car s)))) (list (car s) (cdr s)))
+          ( #t (let* ((lb? (lbrack? (car s)))
+                      (sub-parse (simple-sum-parse (cdr s)))
+                      (sub-sum (car sub-parse))
+                      (tkns (cadr sub-parse))
+                      (rb? (rbrack? (car tkns))) )
+                 (if (and lb? rb?)
+                     (list sub-sum (cdr tkns))
+                     'error) ) )
+          )
     )
   )
+
+(define s3 '( '#\( 1 + 3 '#\) * 6 ) )
+(define s2 '( 1 + 2 + 3))
