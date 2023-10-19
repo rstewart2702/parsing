@@ -38,22 +38,28 @@
 ;;
 ;; I'll try to simplify further:
 ;; <SS> ::=  <P> | ( <P> . ( <SUMOP> . <SS> ) ) ??? I'M GOING TO TRY THIS FOR NOW, SEE IF I CAN AVOID RSL PRODUCTION ALTOGETHER...
+;;
+;; Between trying to think through the meaning of the BNF
+;; grammar, and writing the parsing functions,
+;; the above simplification emerged.
 
-;; NEED TO ENSURE THAT THE rator MUST SATISFY aop? PREDICATE.
-;; IF IT DOES NOT, THEN PARSING THE SUM SHOULD FINISH?
-(define simple-sum-parse
+(define sum-parse
   (lambda (s)
     (cond ((and (null? (cdr s))
                 (not (aop? (car s))) ) (product s) )
           ( #t (let* ((p-parse (product s)) ;; parse out initial product, a <P>
                       (tkns    (cadr p-parse)) ;; remaining tokens from parsing first <P> item
+                      ;; N.B. it's possible that the parsing of a product,
+                      ;; the result of which is bound to name p-parse,
+                      ;; leaves nothing more to parse!
                       (rator   (if (null? tkns) '()
-                                   (car tkns)) ) ) ;; operator is first token, should satisfy "sumop?" right?
+                                   (car tkns)) ) )
+                 ;; operator is first token, should satisfy "sumop?" right?
                  (if (sumop? rator)
                      (let* ((rand    (car p-parse))
-                            (rsl-parse (simple-sum-parse (cdr tkns))) ;; parse-out the <RSL> bit
-                            (rand2   (car rsl-parse))                 ;; second operand, from the parsing
-                            (f-tkns  (cadr rsl-parse)) )     ;; remaining tokens to send back to caller
+                            (ss-parse (sum-parse (cdr tkns))) ;; parse-out the <SS>, recursively
+                            (rand2   (car ss-parse))          ;; second operand, from the parsing
+                            (f-tkns  (cadr ss-parse)) )       ;; remaining tokens to send back to caller
                        (list (list rator rand rand2) f-tkns) )
                      ;; This is what the rest of parsing means
                      ;; if the operator is NOT for addition/subtraction:
@@ -81,7 +87,10 @@
                 (not (aop? (car s))) ) (factor s))
           ( #t (let* ((f-parse (factor s))
                       (tkns    (cadr f-parse))
-                      (rator   (car tkns)))
+                      ;; N.B. it's possible that the parsing of a factor,
+                      ;; result-of-which is bound to name f-parse,
+                      ;; leaves nothing more to parse!
+                      (rator   (if (null? tkns) '() (car tkns))))
                  (if (mulop? rator)
                      (let* ((rand    (car f-parse))
                             (prd-parse (product (cdr tkns))) ;; recursively parses a <P>, a product
@@ -107,7 +116,7 @@
                 (not (lbrack? (car s)))
                 (not (rbrack? (car s)))) (list (car s) (cdr s)))
           ( #t (let* ((lb? (lbrack? (car s)))
-                      (sub-parse (simple-sum-parse (cdr s)))
+                      (sub-parse (sum-parse (cdr s)))
                       (sub-sum (car sub-parse))
                       (tkns (cadr sub-parse))
                       (rb? (rbrack? (car tkns))) )
@@ -118,5 +127,33 @@
     )
   )
 
+;; "Postorder traversal" of parse-trees to produce RPN "programs"
+;; from arithmetic expressions:
+;;
+;; A "parse tree" structure is defined thus:
+;;   <PT> ::=  <A> | ( <AOP> <PT> <PT> )
+(define rpn-program
+  (lambda (t)
+    (if (atom? t) t
+        (let* ((lrslt (rpn-program (cadr t)))
+               (rrslt (rpn-program (caddr t))))
+          (list lrslt rrslt (car t)) )
+        ) ) )
+
+;; This derives a list of operands-and-operators,
+;; arranged into an RPN program, like a forth evaluation,
+;; except it's in reverse:
+(define rpn-ify
+  (lambda (t p)
+    (if (atom? t) (cons t p)
+        (let* ((lp (rpn-ify (cadr t) p))
+               (rp (rpn-ify (caddr t) lp)) )
+          (cons (car t) rp) ) ) ) )
+
+
 (define s3 '( #\( 1 + 3 #\) * 6 ) )
 (define s2 '( 1 + 2 + 3))
+(define s4 '( 6 * #\( 1 + 3 #\) ) )
+(define s5 '( 1 + 3 * 6 ) )
+
+
