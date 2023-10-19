@@ -39,19 +39,29 @@
 ;; I'll try to simplify further:
 ;; <SS> ::=  <P> | ( <P> . ( <SUMOP> . <SS> ) ) ??? I'M GOING TO TRY THIS FOR NOW, SEE IF I CAN AVOID RSL PRODUCTION ALTOGETHER...
 
+;; NEED TO ENSURE THAT THE rator MUST SATISFY aop? PREDICATE.
+;; IF IT DOES NOT, THEN PARSING THE SUM SHOULD FINISH?
 (define simple-sum-parse
   (lambda (s)
     (cond ((and (null? (cdr s))
                 (not (aop? (car s))) ) (product s) )
           ( #t (let* ((p-parse (product s)) ;; parse out initial product, a <P>
                       (tkns    (cadr p-parse)) ;; remaining tokens from parsing first <P> item
-                      (rator   (car tkns)) ;; operator is first token, should satisfy "sumop?" right?
-                      (rand    (car p-parse))
-                      (rsl-parse (simple-sum-parse (cdr tkns))) ;; parse-out the <RSL> bit
-                      (rand2   (car rsl-parse))    ;; second operand, from the parsing
-                      (f-tkns  (cadr rsl-parse)) )     ;; remaining tokens to send back to caller
-                 (list (list rator rand rand2) f-tkns) ) )
+                      (rator   (if (null? tkns) '()
+                                   (car tkns)) ) ) ;; operator is first token, should satisfy "sumop?" right?
+                 (if (sumop? rator)
+                     (let* ((rand    (car p-parse))
+                            (rsl-parse (simple-sum-parse (cdr tkns))) ;; parse-out the <RSL> bit
+                            (rand2   (car rsl-parse))                 ;; second operand, from the parsing
+                            (f-tkns  (cadr rsl-parse)) )     ;; remaining tokens to send back to caller
+                       (list (list rator rand rand2) f-tkns) )
+                     ;; This is what the rest of parsing means
+                     ;; if the operator is NOT for addition/subtraction:
+                     (list (car p-parse) tkns) 
+                     )
+                 )
           )
+    )
     )
   )
 
@@ -80,7 +90,7 @@
                        (list (list rator rand rand2) p-tkns) )
                      ;; this is what the rest of parsing means
                      ;; if the operator is NOT for multiplication:
-                     (list (car f-parse) (cadr f-parse))
+                     (list (car f-parse) tkns)
                      )
                  )
             )
@@ -108,5 +118,5 @@
     )
   )
 
-(define s3 '( '#\( 1 + 3 '#\) * 6 ) )
+(define s3 '( #\( 1 + 3 #\) * 6 ) )
 (define s2 '( 1 + 2 + 3))
