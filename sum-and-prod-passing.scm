@@ -43,6 +43,13 @@
 ;; grammar, and writing the parsing functions,
 ;; the above simplification emerged.
 
+;; Parses list-of-tokens s
+;; Yields the result of the immediate parse, and the remaining tokens,
+;; which must be returned to the caller.
+;; The list-of-remaining-tokens has to be returned to a caller and
+;; also passed in because of the mutually-recursive design of
+;; the parsing procedures.
+
 (define sum-parse
   (lambda (s)
     (cond ((and (null? (cdr s))
@@ -127,6 +134,12 @@
     )
   )
 
+;; Thin wrapper for the top-level parsing procedure
+;; which strips away the returned list-of-remaining-tokens
+(define parse-expr
+  (lambda (s)
+    (car (sum-parse s)) ))
+
 ;; "Postorder traversal" of parse-trees to produce RPN "programs"
 ;; from arithmetic expressions:
 ;;
@@ -143,12 +156,21 @@
 ;; This derives a list of operands-and-operators,
 ;; arranged into an RPN program, like a forth evaluation,
 ;; except it's in reverse:
+;; it accepts a parse-tree and the list which is
+;; the "rpn program generated thus far."
 (define rpn-ify
   (lambda (t p)
     (if (atom? t) (cons t p)
         (let* ((lp (rpn-ify (cadr t) p))
                (rp (rpn-ify (caddr t) lp)) )
           (cons (car t) rp) ) ) ) )
+
+;; Thin wrapper around rpn-ify to hand it the
+;; empty list which is the start of the
+;; program-to-be-built:
+(define rpn-of
+  (lambda (r)
+    (reverse (rpn-ify r '())) ) )
 
 
 (define s3 '( #\( 1 + 3 #\) * 6 ) )
@@ -157,3 +179,43 @@
 (define s5 '( 1 + 3 * 6 ) )
 
 
+;; How do we push operands onto a stack,
+;; and then start using operators to consume
+;; values from the stack?
+
+;; need a push and a pop
+;; need functions to implement the operators
+;;
+;; Retrieve an item from the program and either:
+;;   push it onto the stack
+;;   execute the operation against the stack
+;;     which imples (recursively!) popping items from the stack,
+;;                                 operating on them
+;;                                 pushing the result back onto the stack...
+;;
+;;
+
+;; <RPNP> ::= ( <A> . <RPNP> ) | ( <OPRTR> . <RPNP> )
+;; "Runs" the RPN program given in list p, stack s
+(define run-rpn
+  (lambda (p s)
+    (if (not (null? p))
+        (let ( (next-item (car p)) )
+          (if (aop? next-item)
+              (let* ((rand2 (car s))
+                     (rand1 (cadr s))
+                     (new-stack (cddr s))
+                     (result (compile (list next-item rand1 rand2)))
+                     (rest-of-program (cdr p))
+                     )
+                (run-rpn rest-of-program (cons result new-stack))
+                )
+              (run-rpn (cdr p) (cons next-item s)) ) )
+        s
+        ) ) )
+           
+;; thin wrapper around rpn-eval
+;; which provides it with an empty "runtime stack"
+(define rpn-eval
+  (lambda (rpnp)
+    (run-rpn rpnp '()) ) )
