@@ -1,0 +1,8 @@
+run = "guile --no-auto-compile -l .init.scm -l main.scm"
+hidden = [".init.scm"]
+
+[nix]
+channel = "stable-22_11"
+
+[deployment]
+run = ["sh", "-c", "guile --no-auto-compile -l .init.scm -l main.scm"]
