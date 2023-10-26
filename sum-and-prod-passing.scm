@@ -177,7 +177,7 @@
 (define s2 '( 1 + 2 + 3))
 (define s4 '( 6 * #\( 1 + 3 #\) ) )
 (define s5 '( 1 + 3 * 6 ) )
-
+(define s6 '( #\( 4 - #\( 8 + 1 + 1 #\) #\) / 4 ) ) 
 
 ;; How do we push operands onto a stack,
 ;; and then start using operators to consume
